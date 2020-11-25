@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block body %}
+{% load static %}
+<div id="divRatingList">
+    <span id="lblParams" style="display: none;">{{ params }}</span>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a href="javascript:;" id="aNavBack"><i class="fa fa-arrow-left"></i>&nbsp;Go Back</a>
+    </nav>
+    
+    <!-- rating list html goes here -->
+    <span>Rating List</span>
+    <table id="rpt_tblRating" class="table table-striped table-hover">
+        <thead rp-headertemplate>
+            <tr>
+                <th>Driver ID</th>
+                <th>Rating</th>              
+            </tr>
+        </thead>
+        <tbody rp-bodytemplate>
+            <tr rp-itemtemplate>
+                <td rp-field="driver"></td>
+                <td rp-field="rating"></td>
+            </tr>
+        </tbody>
+    </table>
+    
+
+</div>
+<script type="text/javascript">
+$(document).ready(async function () {
+    var $divRatingList = $('#divRatingList');
+    var $rpt_tblRating = $divRatingList.find('#rpt_tblRating');
+    var ratingData = await getModels('Rating');
+
+    $rpt_tblRating.dataRepeater({
+        data: ratingData
+    
+});
+
+
+    //go back when back button is clicked
+    var $aNavBack = $divRatingList.find('#aNavBack');
+    $aNavBack.on('click', function () {
+        window.history.back();
+    });
+
+
+    //js to load rating list goes here
+});
+</script>
+{% endblock body %}
+
+
+<!-- class Rating(models.Model):
+    rating = models.IntegerField(null=True)
+    #associations to user
+    ratingForUserId = models.IntegerField(null=True)
+    ratingByUserId = models.IntegerField(null=True) -->

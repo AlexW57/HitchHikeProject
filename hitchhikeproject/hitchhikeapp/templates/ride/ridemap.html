@@ -1,0 +1,217 @@
+{% extends 'main.html' %}
+
+{% block maincontent %}
+{% load static %}
+<div id="divRideMap">
+    <div class="card mx-auto" style="margin-top: 25px; width: 95%; padding: 20px; height: 83%;">
+        <form>
+            <div class="alert alert-secondary" style="margin-left: 5px; margin-right: 5px;">
+                <div class="row" style="display: inline-flex;">
+                    <h6 style="padding-top: 8px; margin-left: 15px;">Show me rides that start at&nbsp;</h6>
+                    <input id="txtSearchMapStart" name="txtSearchMapStart" class="form-control input-lg" list="acTxtSearchMapStart" placeholder="Enter text to search..." style="width: 400px;"/>
+                    <datalist id="acTxtSearchMapStart">
+                    </datalist>
+                    <!-- <h6 style="padding-top: 8px;">&nbsp;and end at&nbsp;</h6>
+                    <input id="txtSearchMapEnd" name="txtSearchMapEnd" class="form-control input-lg" value="Anywhere" list="acTxtSearchMapEnd" placeholder="Enter text to search..." style="width: 400px;"/>
+                    <datalist id="acTxtSearchMapEnd">
+                        <option value="Anywhere"></option>
+                    </datalist> -->
+                    <button id="btnGo" type="button" class="btn btn-primary" style="height: 38px; margin-bottom: 4px; margin-left: 25px;"><i class="fa fa-search" style="padding-top: 3px;"></i>&nbsp;Go</button>
+                </div>
+            </div>
+        </form>
+        <div id="divMap" style="width: 100%; height: 100%">
+
+        </div>
+    </div>
+</div>
+<script>
+$(document).ready(async function () {
+    var $divRideMap = $('#divRideMap');
+    var $divMap = $('#divMap');
+    var $txtSearchMapStart = $divRideMap.find('#txtSearchMapStart');
+    // var $txtSearchMapEnd = $divRideMap.find('#txtSearchMapEnd');
+    var $datalistStart = $divRideMap.find('#acTxtSearchMapStart');
+    // var $datalistEnd = $divRideMap.find('#acTxtSearchMapEnd');
+
+    var imgMarkerSolidSrc = "{% static 'img/map-marker-solid.png' %}";
+    var imgMarkerHollowSrc = "{% static 'img/map-marker-hollow.png' %}";
+
+    var mainMapApi = await loadMapBase();
+    var mapCenterStart = null;
+    // var mapCenterEnd = null;
+
+    bindEvents();
+
+    await loadMapLayer(mainMapApi);
+
+    bindValidation();
+
+    await loadDefaultValues();
+
+
+    function bindEvents() {
+        bindMapSearchAutocomplete({
+            mapApi: mainMapApi
+            , jqInput: $txtSearchMapStart
+            , jqDatalist: $datalistStart
+            , onChange: function (name, center) {
+                mapCenterStart = center;
+            }
+        });
+
+        // bindMapSearchAutocomplete({
+        //     mapApi: mainMapApi
+        //     , jqInput: $txtSearchMapEnd
+        //     , jqDatalist: $datalistEnd
+        //     , onChange: function (name, center) {
+        //         mapCenterEnd = center;
+        //     }
+        // });
+
+        $divRideMap.on('click', '#btnGo', function () {
+            if ($divRideMap.find('form').valid()) {
+                loadMapData();
+            }
+        });
+    }
+    
+    async function loadDefaultValues() {
+        //load initial map search start
+        $txtSearchMapStart.prop('disabled', true);
+        
+        try {
+            var myLocation = await getCurrentLatLong();
+            var myLocationName = await getPlaceNameFromLatLong(...myLocation);
+            mapCenterStart = myLocation;
+            $txtSearchMapStart.val(myLocationName);
+        } catch (e) {
+
+        }
+
+        $txtSearchMapStart.prop('disabled', false);
+    }
+
+    async function loadMapData() {
+        var textMapStart = $txtSearchMapStart.val(); 
+
+        if (!mapCenterStart && textMapStart !== 'Anywhere') {
+            showErrorPopup('Please enter a valid start location');
+            return;
+        }
+
+        var startPostalCode = await getPostalCodeFromLatLong(...mapCenterStart); 
+        var startName = await getPlaceNameFromLatLong(...mapCenterStart);
+
+        var rideData = await getModels('Ride', {
+            startZip: startPostalCode
+        });
+
+        if (rideData.length) {
+
+            var ridesByEndZip = {};
+            for (var rideIdx in rideData) {
+                var ride = rideData[rideIdx];
+                var zip = ride.endZip
+                if (!ridesByEndZip[zip]) {
+                    ridesByEndZip[zip] = []
+                } 
+                ridesByEndZip[zip].push(ride); 
+            }
+
+            var latLongEndList = [];
+            for (var endZip in ridesByEndZip) {
+                var zipCenter = await getLatLongCenterOfZip(endZip);
+                latLongEndList.push(zipCenter[0]);
+                latLongEndList.push(zipCenter[1]);
+                var endZipName = await getPlaceNameFromLatLong(...zipCenter);
+                var endZipText = 'There are ' + ridesByEndZip[endZip].length + ' ride(s) starting in ' + startName + ' and ending in ' + endZipName + '<br>' + getRideListLinkHtml(startPostalCode, endZip)
+                Leaflet.marker([zipCenter[0], zipCenter[1]]).addTo(mainMapApi).bindPopup(endZipText, {
+                    autoPanPadding: 50
+                }).openPopup();
+            }
+            
+            Leaflet.marker(mapCenterStart, {
+                icon: Leaflet.icon({
+                    iconUrl: imgMarkerHollowSrc
+                    , iconSize: 40
+                    , iconAnchor: Leaflet.point(20,40)
+                })
+            }).addTo(mainMapApi).bindPopup('<p>This is ' + startName + ', the start of your ride. Click a destination waypoint to get more details.</p>', {
+                    autoPanPadding: 50
+                }).openPopup();
+            
+            latLongEndList.push(mapCenterStart[0]);
+            latLongEndList.push(mapCenterStart[1]);
+            mapFit(...latLongEndList);
+        }
+
+        function getRideListLinkHtml(startZip, endZip) {
+            return `<a href="${window.location.origin + `/ride/ridelist?startZip=${startZip}&endZip=${endZip}`}">Get Details</a>`;
+        }
+    }
+
+    async function loadMapBase() {
+        var mainMapApi = Leaflet.map('divMap').setView([51.505, -0.09], 13);
+        return mainMapApi;
+    }
+    
+    async function loadMapLayer(mapApi) {
+        Leaflet.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+            maxZoom: 18,
+            id: 'mapbox/streets-v11',
+            tileSize: 512,
+            zoomOffset: -1,
+            accessToken: MapboxApi.ACCESS_TOKEN
+        }).addTo(mapApi);
+        var myLocation = await getCurrentLatLong(); 
+        panMapTo(...myLocation);
+    }
+
+    async function getCurrentLatLong() {
+        //my current position
+        var geo = navigator.geolocation;
+        if (geo) {
+            return new Promise(function(resolve, reject){
+                    geo.getCurrentPosition(function (position) {
+                        resolve([position.coords.latitude, position.coords.longitude]); 
+                });
+            });
+        }
+    }
+
+    function panMapTo(lat, long) {
+        mainMapApi.panTo(Leaflet.latLng(lat, long));
+    }
+
+    //list of lat longs must be even [lat, long, lat, long, ...]
+    function mapFit(...latLongs) {
+        var markers = [];
+        for (var i = 0; i < latLongs.length; i += 2) {
+            markers.push(Leaflet.marker([latLongs[i], latLongs[i+1]]))
+        }
+
+        var group = Leaflet.featureGroup(markers);
+
+        mainMapApi.fitBounds(group.getBounds());
+        setTimeout(function () {
+            mainMapApi.zoomOut(1);
+        }, 400);
+    }
+
+    function bindValidation() {
+        $divRideMap.find('form').validate({
+            rules: {
+                txtSearchMapEnd: 'required'
+                , txtSearchMapStart: 'required'
+            }
+            , errorClass: 'has-error'
+            , errorPlacement: function ($error, $element) {
+                
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

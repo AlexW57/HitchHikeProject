@@ -1,0 +1,20 @@
+.div-body {
+    overflow-x: hidden;
+    margin: 25px;
+}
+
+.main-bg {
+    background-color: slategrey;
+}
+
+.card {
+    background-color: #f8f9fa;
+}
+
+.has-error {
+    box-shadow: 0 0 5px red;
+}
+
+.main-color {
+    color: slategrey;
+}

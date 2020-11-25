@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% block body %}
+{% load static %}
+<div id="divRideCreate">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light" style="height: 50px;">
+        <a href="/home"><i class="fa fa-arrow-left"></i>&nbsp;Return to Hitchhike</a>
+    </nav>
+    <div class="card mx-auto" style="margin-top: 25px; width: 600px; padding: 20px;">
+        <div class="row">
+            <h5 class="mr-auto" style="padding-left: 15px;">Create a New Ride</h5>
+        </div>
+        <hr />
+        <form>
+            <div class="form-group row">
+                <label for="txtStartZip" class="col-sm-5 col-form-label">Start Location (Zip Code)</label>
+                <div class="col-sm-7">
+                    <input id="txtStartZip" name="txtStartZip" minlength="5" maxlength="5" type="number" class="form-control input-lg" placeholder="5-digit zip code">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="txtEndZip" class="col-sm-5 col-form-label">End Location (Zip Code)</label>
+                <div class="col-sm-7">
+                    <input id="txtEndZip" name="txtEndZip" minlength="5" maxlength="5" type="number" class="form-control input-lg" placeholder="5-digit zip code">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="txtStartDate" class="col-sm-5 col-form-label">Start Date</label>
+                <div class="col-sm-7">
+                    <input id="txtStartDate" name="txtStartDate" type="date" class="form-control input-lg">
+                </div>
+            </div>
+            <!-- <div class="form-group row">
+                <label for="txtEndDate" class="col-sm-5 col-form-label">End Date</label>
+                <div class="col-sm-7">
+                    <input id="txtEndDate" name="txtEndDate" type="date" class="form-control input-lg">
+                </div>
+            </div> -->
+            <div class="row" style="padding-top: 5px;">
+                <h6 class="mr-auto" style="padding-left: 15px;">Vehicle Information</h6>
+            </div>
+            <hr style="margin-top: 0px;"/>
+            <div class="form-group row">
+                <label for="txtVehicleYear" class="col-sm-5 col-form-label">Vehicle Year</label>
+                <div class="col-sm-7">
+                    <input id="txtVehicleYear" name="txtVehicleYear" minlength="4" maxlength="4" type="number" class="form-control input-lg">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="txtVehicleMake" class="col-sm-5 col-form-label">Vehicle Make</label>
+                <div class="col-sm-7">
+                    <input id="txtVehicleMake" name="txtVehicleMake" type="text" class="form-control input-lg">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="txtVehicleModel" class="col-sm-5 col-form-label">Vehicle Model</label>
+                <div class="col-sm-7">
+                    <input id="txtVehicleModel" name="txtVehicleModel" type="text" class="form-control input-lg">
+                </div>
+            </div>
+        </form>
+        <div class="row">
+            <div class="col-sm-8"></div>
+            <div class="col-sm-4" style="text-align: right;">
+                <button id="btnCreateRide" class="btn btn-success" title="Create Ride">Create</button>
+                <a href="/home"><button id="btnCancel" class="btn btn-danger" title="Cancel">Cancel</button></a>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+$(document).ready(async function () {
+    var $divRideCreate = $('#divRideCreate');
+    var $frmCreateRide = $divRideCreate.find('form');
+
+    bindEvents();
+    bindValidation();
+
+    function bindEvents() {
+        $divRideCreate.on('click', '#btnCreateRide', async function () {
+            tryCreateRide();
+        });
+    }
+
+    async function tryCreateRide() {
+        var valid = $frmCreateRide.valid();
+
+        if (!valid) {
+            showErrorPopup('Please complete the form before creating a Ride.');
+            return;
+        }
+
+        var startZip = $divRideCreate.find('#txtStartZip').val();
+        var endZip = $divRideCreate.find('#txtEndZip').val();
+        var startDate = new Date($divRideCreate.find('#txtStartDate').val());
+        // var endDate = new Date($divRideCreate.find('#txtEndDate').val());
+        var vehicleYear = $divRideCreate.find('#txtVehicleYear').val();
+        var vehicleMake = $divRideCreate.find('#txtVehicleMake').val();
+        var vehicleModel = $divRideCreate.find('#txtVehicleModel').val();
+
+        //create ride in DB as well as association with USER_RIDE to current user
+        var rideData = {
+                startZip: startZip
+                , endZip: endZip
+                , startDate: dateToServer(startDate)
+                // , endDate: dateToServer(endDate)
+                , vehicleYear: vehicleYear
+                , vehicleMake: vehicleMake
+                , vehicleModel: vehicleModel
+            }
+        
+        try {
+            await rideController.createRide(rideData, getCurrentUserId());
+
+            window.location = '/ride/ridelist';
+        } catch (e) {
+            showErrorPopup('Unable to create ride. Please try again.')
+        }
+    }
+
+    function bindValidation () {
+        $frmCreateRide.validate({
+            rules: {
+                txtStartZip: 'required'
+                , txtEndZip: 'required'
+                , txtStartDate: 'required'
+                // , txtEndDate: 'required'
+                , txtVehicleYear: 'required'
+                , txtVehicleMake: 'required'
+                , txtVehicleModel: 'required'
+            }
+            , errorClass: 'has-error'
+            , errorPlacement: function ($error, $element) {
+                
+            }
+        });
+    }
+});
+</script>
+{% endblock body %}

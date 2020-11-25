@@ -1,0 +1,38 @@
+<html>
+    {% load static %}
+    <!-- core js:  bootstrap, jquery, fontawesome -->
+    <link rel="stylesheet" href="https://cdnjs.Cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <script src="{% static 'cdn-cache/jquery-3.4.1.min.js' %}"></script>
+    <script src="{% static 'cdn-cache/popper.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'cdn-cache/bootstrap.min.css' %}">
+    <script src="{% static 'cdn-cache/bootstrap.min.js' %}"></script>
+
+    <!-- Plugins -->
+    <script src="{% static 'cdn-cache/jquery.validate.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'cdn-cache/google-fonts.css' %}" type='text/css'>
+    <link rel="stylesheet" href="{% static 'cdn-cache/jquery-confirm.min.css' %}" type='text/css'>
+    <script src="{% static 'cdn-cache/jquery-confirm.min.js' %}"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+    
+    <!--favicon-->
+    <link rel="shortcut icon" type="image/png" href="{% static 'img/favicon.ico' %}"/>
+
+    <!-- csrf -->
+    <span id="csrftoken">{% csrf_token %}</span>
+
+    <!-- logged in user id -->
+    <span id="currentUserId" style="display: none;">{{ userdata.user_id }}</span>
+
+    <!-- dev scripts styles etc-->
+    <link rel="stylesheet" href="{% static 'css/global.css' %}">
+    <script src="{% static 'js/api.js' %}"></script> 
+    <script src="{% static 'js/global.js' %}"></script> 
+    <script src="{% static 'js/rideController.js' %}"></script> 
+    <script src="{% static 'js/mapbox-api.js' %}"></script> 
+    <body class="main-bg">
+        {% block body %}
+        {% endblock body %}
+    </body>
+</html>

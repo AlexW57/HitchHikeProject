@@ -1,0 +1,140 @@
+{% extends 'main.html' %}
+
+{% block maincontent %}
+<div id="divRideList">
+    <!--Parameters-->
+    <span id="lblStartZip" style="display: none;">{{ startZip }}</span>
+    <span id="lblEndZip" style="display: none;">{{ endZip }}</span>
+    
+    <div class="card mx-auto" style="margin-top: 25px; width: 95%; padding: 20px;">
+        <div class="alert alert-primary" style="text-align: center;">
+            <h5 class="mx-auto">Want to host a ride?&nbsp;&nbsp;&nbsp;Click 'Create Ride' above to begin</h5>
+        </div>
+        <div class="row" style="padding: 15px;"></div>
+        
+            
+        <h2>Rides <span id="lblParamDescription" class="badge badge-secondary"></span></h2>
+           
+<style>
+    input[type=text]{
+        border: 2px solid #ccc;
+        
+        font-size: 16px;
+        background-color: rgb(237, 237, 237);
+        background-position: 10px 10px; 
+        background-repeat: no-repeat;
+        padding: 2px 10px 2px 10px;
+        -webkit-transition: 0.5s;
+        transition: 0.5s;
+        outline: none;
+
+        
+
+    }
+
+    input[type=text]:focus{
+        border: 2px solid #555;
+    }
+</style>
+        
+        <div class="row" style="padding: 0px 20px 5px 0px;"> 
+            
+            <div class="ml-auto">
+                <label for="FilterItem" style="font-size: 18px;
+                font-weight:600;
+                padding: 5px 5px -5px -5px;" >Filter <i class="fa fa-search"></i> </label>
+
+                <input class="input-sm" type="text" id="filtertextbox" placeholder="Search...">
+            </div>
+        </div>
+        <table id="rpt_tblRides" class="table table-striped table-hover">
+            <thead rp-headertemplate>
+                <tr>
+                    <th>ID</th>
+                    <th>Start Zip</th>
+                    <th>End Zip</th>
+                    <th>Vehicle Year</th>
+                    <th>Vehicle Make</th>
+                    <th>Vehicle Model</th>
+                </tr>
+            </thead>
+            <tbody rp-bodytemplate>
+                <tr rp-itemtemplate>
+                    <td rp-field="id"></td>
+                    <td rp-field="startZip"></td>
+                    <td rp-field="endZip"></td>
+                    <td rp-field="vehicleYear"></td>
+                    <td rp-field="vehicleMake"></td>
+                    <td rp-field="vehicleModel"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+$(document).ready(async function () {
+    var $divRideList = $('#divRideList');
+    var $rpt_tblRides = $divRideList.find('#rpt_tblRides');
+    var $lblEndZip = $divRideList.find('#lblEndZip');
+    var $lblStartZip = $divRideList.find('#lblStartZip');
+    var paramEndZip = $lblEndZip.text();
+    var paramStartZip = $lblStartZip.text();
+
+    await loadRidesData();
+
+    bindEvents();
+
+    async function loadRidesData() {
+        var rideParams = {}
+        var paramDescriptionArray = [];
+
+        if (paramStartZip) {
+            rideParams.startZip = paramStartZip;
+            paramDescriptionArray.push(`Start Zip Code: ${paramStartZip}`);
+        }
+
+        if (paramEndZip) {
+            rideParams.endZip = paramEndZip;
+            paramDescriptionArray.push(`End Zip Code: ${paramEndZip}`);
+        }
+
+        var rideData = await rideController.getRideList(rideParams);
+
+        if (rideData.length > 0) {
+            $rpt_tblRides.dataRepeater({
+                data: rideData
+            });
+        } else {
+            $rpt_tblRides.addEmptyTableRow('No rides to display ');
+        }
+
+        
+
+        if (paramDescriptionArray.length > 0) {
+            var fullParamDescription = paramDescriptionArray.join(', ');
+            $divRideList.find('#lblParamDescription').text(fullParamDescription);
+        }
+    }
+   
+    function bindEvents() { 
+        $rpt_tblRides.on('click', 'tr', function () {
+            var $tr = $(this);
+            var rideId = $tr.find('td:first').text();
+            //open a link to the ride page
+            window.location = '/ride/rideview?id=' + rideId;
+        });
+        
+        $divRideList.on("keyup","#filtertextbox",function(){
+            var filtertext=$(this).val();
+            var $trs=$divRideList.find("#rpt_tblRides > tbody > tr");
+            $trs.show();
+            if (filtertext !== ""){
+                $trs.filter(":not(:icontains("+filtertext+"))").hide();
+            }
+        })
+
+
+    }
+});
+</script>
+{% endblock %}

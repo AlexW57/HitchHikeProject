@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% block body %}
+{% load static %}
+<div id="divRideView">
+
+    
+    <span id="lblRideId" style="display: none;">{{ rideId }}</span>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a href="javascript:;" id="aNavBack"><i class="fa fa-arrow-left"></i>&nbsp;Go Back</a>
+    </nav>
+
+    <div class="card mx-auto" style="margin-top: 25px; width: 600px; padding: 20px;">
+        <div class="row">
+            <h5 class="mr-auto" style="padding-left: 15px;">View Ride</h5>
+        </div>
+        <hr />
+        <form>
+            <div class="form-group row">
+                <label for="txtStartZip" class="col-sm-5 col-form-label">Start Location (Zip Code)</label>
+                <div class="col-sm-7">
+                    <input id="txtStartZip" name="txtStartZip" minlength="5" maxlength="5" type="number" class="form-control input-lg" placeholder="5-digit zip code" disabled> 
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="txtEndZip" class="col-sm-5 col-form-label">End Location (Zip Code)</label>
+                <div class="col-sm-7">
+                    <input id="txtEndZip" name="txtEndZip" minlength="5" maxlength="5" type="number" class="form-control input-lg" placeholder="5-digit zip code" disabled>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="txtStartDate" class="col-sm-5 col-form-label">Start Date</label>
+                <div class="col-sm-7">
+                    <input id="txtStartDate" name="txtStartDate" type="date" class="form-control input-lg" disabled>
+                </div>
+            </div>
+            <!-- <div class="form-group row">
+                <label for="txtEndDate" class="col-sm-5 col-form-label">End Date</label>
+                <div class="col-sm-7">
+                    <input id="txtEndDate" name="txtEndDate" type="date" class="form-control input-lg">
+                </div>
+            </div> -->
+            <div class="row" style="padding-top: 5px;">
+                <h6 class="mr-auto" style="padding-left: 15px;">Vehicle Information</h6>
+            </div>
+            <hr style="margin-top: 0px;"/>
+            <div class="form-group row">
+                <label for="txtVehicleYear" class="col-sm-5 col-form-label">Vehicle Year</label>
+                <div class="col-sm-7">
+                    <input id="txtVehicleYear" name="txtVehicleYear" minlength="4" maxlength="4" type="number" class="form-control input-lg" disabled>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="txtVehicleMake" class="col-sm-5 col-form-label">Vehicle Make</label>
+                <div class="col-sm-7">
+                    <input id="txtVehicleMake" name="txtVehicleMake" type="text" class="form-control input-lg" disabled>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="txtVehicleModel" class="col-sm-5 col-form-label">Vehicle Model</label>
+                <div class="col-sm-7">
+                    <input id="txtVehicleModel" name="txtVehicleModel" type="text" class="form-control input-lg" disabled>
+                </div>
+            </div>
+            <div class="row" style="padding-top: 5px;">
+                <h6 class="mr-auto" style="padding-left: 15px;">Driver Information</h6>
+            </div>
+            <hr style="margin-top: 0px;"/>
+            <div class="form-group row">
+                <label for="txtDriverInfo" class="col-sm-5 col-form-label">Name</label>
+                <div class="col-sm-7">
+                    <input id="txtDriverName" name="txtDriverName" type="text" class="form-control input-lg" disabled>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="txtDriverInfo" class="col-sm-5 col-form-label">Rating</label>
+                <div id="divDriverRating" class="col-sm-7">
+                    
+                </div>
+            </div>
+            <div class="row" style="padding-top: 5px; height: 35px; margin-right: 15px;">
+                <button id="btnJoinRide" class="ml-auto btn btn-success" type="button" style="display: none;">
+                    Join ride
+                </button>
+                <button id="btnCancelRide" class="ml-auto btn btn-danger" type="button" style="display: none;">
+                    Cancel ride
+                </button>
+            </div> 
+
+            <div class="row" style="padding-top: 5px;">
+                <h6 class="mr-auto" style="padding-left: 15px;">Rider Information</h6>
+            </div>
+            <hr style="margin-top: 0px;"/>
+            <table class="table table-striped" id="riderTable">
+                <thead rp-headertemplate>
+                    <tr>
+                        <th>Name</th>
+                    </tr>
+                </thead>
+                <tbody rp-bodytemplate>
+                    <tr rp-itemtemplate >
+                        <td rp-field="userName"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </form>        
+    </div>
+</div>
+
+<script type="text/javascript">
+$(document).ready(async function () {
+    var $divRideView = $('#divRideView');
+    var _riderData;
+        
+    var rideId = tryParseInt($divRideView.find('#lblRideId').text(), null);
+
+    var rideData = await getModel('Ride', rideId);
+    
+    //go back when back button is clicked
+    var $aNavBack = $divRideView.find('#aNavBack');
+    $aNavBack.on('click', function () {
+        window.history.back();
+    });
+
+    
+
+    await loadRideDataOntoForm();
+    await loadRiders();
+    await setRideButtons();
+    await bindEvents();
+
+    async function loadRideDataOntoForm() {
+        $divRideView.find('#txtStartZip').val(rideData.startZip);
+        $divRideView.find('#txtEndZip').val(rideData.endZip);
+        $divRideView.find('#txtStartDate').val(rideData.startDate);
+        $divRideView.find('#txtVehicleYear').val(rideData.vehicleYear);
+        $divRideView.find('#txtVehicleMake').val(rideData.vehicleMake);
+        $divRideView.find('#txtVehicleModel').val(rideData.vehicleModel);
+
+
+        //loading the driver information
+        var driverId = await executeModelMethod('Ride', 'getDriverId', {
+            RideId: rideId
+        });
+        driverId = tryParseInt(driverId, 0);
+        if (driverId > 0) {
+            var driverDataArray = await getModels('UserData', {
+                userId: driverId
+            });
+            if (driverDataArray.length) {
+                var driverData = driverDataArray[0];
+                $divRideView.find('#txtDriverName').val(driverData.userName);
+                
+                var $divDriverRating = $divRideView.find('#divDriverRating');
+                var driverRating = await executeModelMethod('UserData', 'getRating', { UserId: driverId });
+                driverRating = tryParseInt(driverRating, null);
+
+                if (driverRating != null) {
+                    $divDriverRating.insertRating(driverRating);
+                } else {
+                    $divDriverRating.html('<i>This driver has not been rated</i>')
+                }
+            }
+        }
+    }
+
+    async function loadRiders() {
+        _riderData = await executeModelMethod("Ride", "getRiders", {RideId:rideId});
+        var $riderTable = $divRideView.find("#riderTable");
+        if (_riderData.length > 0) {            
+            $riderTable.dataRepeater({
+                data: _riderData
+            });
+        } else {
+            $riderTable.addEmptyTableRow('No riders to display');
+        }
+    }  
+
+    async function setRideButtons() {
+        var $btnJoinRide = $divRideView.find('#btnJoinRide');
+        var $btnCancelRide = $divRideView.find('#btnCancelRide');
+
+        var currentUserId = tryParseInt(getCurrentUserId(), 0);
+        //loading the driver information
+        var driverId = await executeModelMethod('Ride', 'getDriverId', {
+            RideId: rideId
+        });
+        driverId = tryParseInt(driverId, 0);
+
+        var userIsDriver = currentUserId === driverId;
+
+        var userCanJoin = false; //user is not riding and not driving
+        var userCanCancel = false; //user is driver
+
+        var riderIdList = _riderData.map(function (rider) {
+            return rider.userId;
+        });
+        
+        var userIsRiding = riderIdList.indexOf(currentUserId) >= 0;
+
+        if (userIsDriver) {
+            $btnCancelRide.show();
+        } else if (!userIsRiding) {
+            $btnJoinRide.show();
+        }
+    }
+
+    async function bindEvents() {
+        $divRideView.on('click', '#btnJoinRide', async function () {
+            //now create association between user and ride
+            var u_r = await createModel('User_Ride', {
+                rideId: rideId
+                , userId: getCurrentUserId()
+                , userRole: userRole.Rider
+            });
+
+            window.location = window.location;
+            //reload the page
+        });
+
+        $divRideView.on('click', '#btnCancelRide', async function () {
+            //delete the ride using await deleteModel
+            //redirect user back to homepage
+            await deleteModel("Ride", rideId);
+            window.location = "/home";
+           
+        });
+    }
+});
+
+</script>
+{% endblock body %}

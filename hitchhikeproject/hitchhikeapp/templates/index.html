@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block body %}
+{% load static %}
+<div class="div-login">
+    <div class="card mx-auto" style="width: 18rem; margin-top: 25px;">
+        <img src="{% static 'img/logo-small.png' %}" class="card-img-top mx-auto" style="height: 100px; width: 100px; margin-top: 15px;">
+        <div class="card-body">
+            <h5 class="card-title">Hitchhike</h5>
+            <p class="card-text">Welcome to Hitchhike. Click the link below to login.</p>
+            <a href="/login/auth0" class="btn btn-primary">Login</a>
+        </div>
+    </div>
+</div>
+{% endblock body %}

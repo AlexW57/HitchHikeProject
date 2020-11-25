@@ -1,0 +1,58 @@
+{% extends 'main.html' %}
+{% block maincontent %}
+<style>
+    #divHome .row {
+        margin-top: 10px;
+        margin-bottom: 10px;
+        padding: 10px;
+    }
+    #divHome .card {
+        width: 95%;
+        padding: 10px;
+    }
+
+    #divHome .number-label {
+        font-weight: bold;
+        font-size: 27px;
+    }
+
+</style>
+<body>
+    <div id="divHome">
+        <div class="row">
+            <div class="card mx-auto">
+                <div class="jumbotron" style="background-color: unset; margin-bottom: 0px;">
+                    <h1 class="display-4">Welcome to HitchHike!</h1>
+                    <p class="lead">You are joining <span id="lblJoinedRideCount" class="number-label">-</span> rides this month.</p>
+                    <p class="lead">You are hosting <span id="lblHostedRideCount" class="number-label">-</span> rides this month.</p>
+                    <hr class="my-4">
+                    <a class="btn btn-primary btn-lg" href="/ride/ridemap" role="button">View rides on map <i class="fa fa-arrow-right"></i></a>
+                  </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+<script>
+$(document).ready(async function () {
+    var $divHome = $('#divHome');
+
+    await loadRideCounts();
+
+    async function loadRideCounts() {
+        var myHostedRides = await executeModelMethod('UserData', 'getUserRides', {
+            UserId: getCurrentUserId()
+            , UserRole: userRole.Driver
+        });
+        var myJoinedRides = await executeModelMethod('UserData', 'getUserRides', {
+            UserId: getCurrentUserId()
+            , UserRole: userRole.Rider
+        });
+        
+        $divHome.find('#lblJoinedRideCount').text(myJoinedRides.length);
+        $divHome.find('#lblHostedRideCount').text(myHostedRides.length);
+    }
+});
+</script>
+{% endblock %}
+
